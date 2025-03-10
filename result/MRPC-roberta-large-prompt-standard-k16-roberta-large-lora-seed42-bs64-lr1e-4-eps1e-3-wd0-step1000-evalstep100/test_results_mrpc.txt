@@ -1,0 +1,6 @@
+eval_loss = 1.3698012828826904
+eval_acc = 0.7279411764705882
+eval_f1 = 0.8014311270125224
+eval_acc_and_f1 = 0.7646861517415553
+time_in_sec = 841
+memory_in_GB = 5.31
