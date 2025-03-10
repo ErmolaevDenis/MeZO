@@ -1,10 +1,8 @@
-# MeZO on Medium-sized Masked Language Models
-
-This part of the code is for MeZO experiments on RoBERTa-large. It is based on [LM-Kernel-FT](https://github.com/princeton-nlp/LM-Kernel-FT) and [LM-BFF](https://github.com/princeton-nlp/LM-BFF).
+# Comparison of LoRa and MeZO+LoRa algorithms
 
 ## Installation
 
-Please install the latest versions of PyTorch (`pytorch` following [https://pytorch.org](https://pytorch.org)) and Transformers (`transformers`). This code is tested on `torch==2.1.0.dev20230514+cu118` and `transformers==4.28.1` with Python 3.9.7, but should work with older/later versions of these packages too.
+Please install the PyTorch (`pytorch` following [https://pytorch.org](https://pytorch.org)) and Transformers (`transformers`). This code is tested on `torch==2.1.0.dev20230514+cu118` and `transformers==4.28.1` with Python 3.9.7. It is recommended to use these versions.
 
 ## Prepare the data
 
@@ -15,7 +13,7 @@ cd data
 bash download_dataset.sh
 ```
 
-Then use the following command (in the `medium_models` folder) to generate the data we need:
+Then use the following command to generate the data we need:
 
 ```bash
 for K in 16 512; do
@@ -34,48 +32,34 @@ Use `run.py` for all functions and refer to `run.py` for the usage of all argume
 python run.py {ARGUMENTS}
 ```
 
-To reproduce our results in the paper, we also provide two example files `finetune.sh` (for all fine-tuning experiments) and `mezo.sh` (for all MeZO experiments). You can run them directly with the following commands (we use the following six datasets in our experiments -- `SST-2`, `sst-5`, `SNLI`, `MNLI`, `RTE`, and `trec`):
+The main goal is to compare LoRa and MeZO+LoRa fine-tuning algorithms.
+
+MeZO (https://arxiv.org/pdf/2305.17333) is the state-of-the-art gradient-free optimization method for Large Language Models (LLMs) fine-tuning. The MeZO algorithm is a way to fine-tune LLMs using only forward passes, which means it doesn't need as much memory as backpropagation. The LoRA is a Parameter-Efficient-Fine-Tuning (PEFT) approach that freezes a pre-trained model and applies additional trainable parameters (weights) that are factorized with small decomposition rank r.
+
+This part of the code is for experiments on RoBERTa-large model. It is based on [LM-Kernel-FT](https://github.com/princeton-nlp/LM-Kernel-FT) and [LM-BFF](https://github.com/princeton-nlp/LM-BFF).
+
+The model will be trained on the [MRPC](https://huggingface.co/datasets/SetFit/mrpc) dataset.
+
+To train the model on our dataset, enter the following commands.
+
+For the LoRa algorithm:
+
 ```bash
-# Adam fine-tuning
-TASK=SST-2 K=16 SEED=42 BS=8 LR=1e-5 MODEL=roberta-large bash finetune.sh
-
-# Adam fine-tuning + prefix-tuning
-TASK=SST-2 K=16 SEED=42 BS=8 LR=1e-2 MODEL=roberta-large EXTRA_TAG=prefix bash finetune.sh --prefix_tuning --num_prefix 5 --no_reparam --prefix_init_by_real_act
-
-# Adam fine-tuning + LoRA
-TASK=SST-2 K=16 SEED=42 BS=8 LR=1e-4 MODEL=roberta-large EXTRA_TAG=lora bash finetune.sh --apply_lora --lora_r 8 --lora_alpha 16
-
-# MeZO
-TASK=SST-2 K=16 SEED=42 BS=64 LR=1e-6 EPS=1e-3 MODEL=roberta-large bash mezo.sh
-
-# MeZO + prefix-tuning
-TASK=SST-2 K=16 SEED=42 BS=64 LR=1e-2 EPS=1e-1 MODEL=roberta-large EXTRA_TAG=prefix bash mezo.sh --prefix_tuning --num_prefix 5 --no_reparam --prefix_init_by_real_act
-
-# MeZO + LoRA
-TASK=SST-2 K=16 SEED=42 BS=64 LR=1e-4 EPS=1e-3 MODEL=roberta-large EXTRA_TAG=lora bash mezo.sh --apply_lora --lora_r 8 --lora_alpha 16
+# LoRA fine-tuning
+TASK=MRPC K=16 SEED=42 BS=64 LR=1e-4 EPS=1e-3 MODEL=roberta-large MODE=lora STEP=1000 EVAL_STEP=100 bash finetune.sh --apply_lora --lora_r 8 --lora_alpha 16 --output_dir ./result/MRPC-roberta-large-prompt-standard-k16-roberta-large-lora-seed42-bs64-lr1e-4-eps1e-3-wd0-step1000-evalstep100
 ```
-You can designate different hyperparameters by passing different environment variables as shown above. You can also directly add arguments at the end of the command to override the default ones. For all the hyperparameters you can control via environment variables, please refer to `finetune.sh` and `mezo.sh`. For the hyperparameters we used in our experiments, please refer to Appendix D of our paper.
 
+For the MeZO + LoRa algorithm:
+
+```
+# MeZO + LoRA
+TASK=MRPC K=16 SEED=42 BS=64 LR=1e-4 EPS=1e-3 MODEL=roberta-large EXTRA_TAG=lora STEP=1000 EVAL_STEP=100 bash mezo.sh --apply_lora --lora_r 8 --lora_alpha 16 --output_dir ./result/MRPC-roberta-large-prompt-standard-k16-roberta-large-mezo-lora-seed42-bs64-lr1e-4-eps1e-3-wd0-step1000-evalstep100
+```
 
 ## Gather results
 
-All the results will be stored in `./log`. To analyze the results (for example, examine the grid search), use the following command
-```bash
-python tools/gather_result.py --condition "{'tag': 'k16-roberta-large-ft', 'task_name': 'sst-2'}"
-```
+To analyze the results, you can go to the `.result` folder and the corresponding algorithm folder. It will contain `txt` files with basic quality metrics.
 
-Then the program will find all the trials that satisfy the condition in `./log`, and print the mean/std of the final results. Note that the task names are all lower-cased here.
+## Research part
 
 
-## Ablations
-
-RoBERTa-large models can be fine-tuned on most single GPUs, so we did not yet implement all of the memory-efficient ZO variants discussed in Appendix B. For now, if you want to run ablations other ZO ablations, you can add the flag `--zero_order_use_trainer_optim`, which will store the ZO gradients in the `param.grad` buffer and then use a PyTorch optimizer as usual. This causes the total memory consumption for ZO to be twice that of inference, which is still substantially less than that of backpropagation. The ablations can then be run with the additional following flags: 
-- ZO-Adam: `--optimizer "adam"`
-- ZO-Momentum: `--momentum <beta>`
-- $n$-SPSA with $n>1$: `--zero_order_sample <n>` and you can add a linear or constant scheduler on it with `--zero_order_sample_scheduler {"linear", "constant"}`
-- No prompt: `--few_shot_type finetune`
-
-Appendix B discusses variants of ZO that modify the expectation and the variance. To run those one can use the following flags.
-- Modify variance: `--zo_variant {"grad_norm", "param_norm"}`
-- Recompute the control variate at the start of each epoch: `--recmopute_norms`
-- Modify expectation: `--change_grad_estimate`
