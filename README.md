@@ -49,7 +49,7 @@ TASK=MRPC K=16 SEED=42 BS=64 LR=1e-4 EPS=1e-3 MODEL=roberta-large MODE=lora STEP
 
 For the MeZO + LoRA algorithm:
 
-```
+```bash
 # MeZO + LoRA
 TASK=MRPC K=16 SEED=42 BS=64 LR=1e-4 EPS=1e-3 MODEL=roberta-large EXTRA_TAG=lora STEP=1000 EVAL_STEP=100 bash mezo.sh --apply_lora --lora_r 8 --lora_alpha 16 --output_dir ./result/MRPC-roberta-large-prompt-standard-k16-roberta-large-mezo-lora-seed42-bs64-lr1e-4-eps1e-3-wd0-step1000-evalstep100
 ```
