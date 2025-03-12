@@ -109,7 +109,7 @@ MeZO+LoRA: 778 sec
 
 Speed advantage: MeZO+LoRA is ~7% faster due to the absence of backpropagation.
 
-###Memory Consumption
+### Memory Consumption
 
 LoRA: 5.31 GB.
 
