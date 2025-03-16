@@ -94,7 +94,7 @@ Optimizer: Adam (LoRA), MeZO-SGD (MeZO+LoRA)
 
 ### Performance Comparison
 
-|  Metric  | LoRA (Validation) | MeZO+LoRA (Validation) | LoRA (Test) | MeZO+LoRA (Test) |
+|  Metric  | LoRA (Evaluation) | MeZO+LoRA (Evaluation) | LoRA (Test) | MeZO+LoRA (Test) |
 |----------|-------------------|------------------------|-------------|------------------|
 | Loss     |        0.94       |       **0.62**         |     1.37    |      **0.65**    |
 | Accuracy |     **78.1%**     |         68.7%          |   **72.8%** |        63.9%     |
